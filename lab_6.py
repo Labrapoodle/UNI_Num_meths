@@ -1,12 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# 1. Полином Лагранжа
+# 1. Лагранж
 def lagrange_interpolation(x_nodes, y_nodes, x):
     n = len(x_nodes)
     res = 0
     for i in range(n):
-        # Считаем базисный полином l_i(x)
+        # базисный полином l_i(x)
         p = 1
         for j in range(n):
             if i != j:
@@ -14,32 +14,30 @@ def lagrange_interpolation(x_nodes, y_nodes, x):
         res += y_nodes[i] * p
     return res
 
-# 2. Полином Ньютона
+# 2. Ньютона
 def newton_interpolation(x_nodes, y_nodes, x):
     n = len(x_nodes)
-    # Строим таблицу разделенных разностей
+    
     coef = np.copy(y_nodes).astype(float)
     for j in range(1, n):
         for i in range(n - 1, j - 1, -1):
             coef[i] = (coef[i] - coef[i-1]) / (x_nodes[i] - x_nodes[i-j])
     
-    # Считаем значение полинома по схеме Горнера
+    
     res = coef[n-1]
     for i in range(n - 2, -1, -1):
         res = res * (x - x_nodes[i]) + coef[i]
     return res
 
-# --- ПОДГОТОВКА ДАННЫХ ---
-# Генерируем "узлы" (точки, которые мы знаем)
-# Возьмем 7 случайных точек на интервале [-10, 10]
-np.random.seed(42) # Чтобы результат был одинаковым при каждом запуске
-x_nodes = np.sort(np.random.uniform(-10, 10, 7))
-y_nodes = np.sin(x_nodes / 2) * 5  # Исходная "скрытая" зависимость
 
-# Точка x, в которой нужно найти значение (как просили в задании)
+np.random.seed(42) 
+x_nodes = np.sort(np.random.uniform(-10, 10, 7))
+y_nodes = np.sin(x_nodes / 2) * 5  # Этого здесь нет!
+
+
 x_target = 2.5
 
-# --- ВЫЧИСЛЕНИЯ ---
+
 val_lagrange = lagrange_interpolation(x_nodes, y_nodes, x_target)
 val_newton = newton_interpolation(x_nodes, y_nodes, x_target)
 
@@ -47,11 +45,11 @@ print(f"Результаты для x = {x_target}:")
 print(f"Полином Лагранжа L({x_target}) = {val_lagrange:.4f}")
 print(f"Полином Ньютона  N({x_target}) = {val_newton:.4f}")
 
-# --- ВИЗУАЛИЗАЦИЯ ---
+
 a, b, h = -10, 10, 0.1
 x_range = np.arange(a, b + h, h)
 
-# Считаем значения полинома для всего графика
+
 y_lagrange_plot = [lagrange_interpolation(x_nodes, y_nodes, xi) for xi in x_range]
 
 plt.figure(figsize=(10, 6))
