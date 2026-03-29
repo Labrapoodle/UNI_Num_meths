@@ -1,164 +1,81 @@
-import math
 import numpy as np
+import matplotlib.pyplot as plt
 
-def func (x, func_number, deriviate):
-    match (func_number):
-        case "first":
-            match (deriviate):
-                case "bare":
-                    return math.sin(x) + x**2
-                case "sec":
-                    return math.sin(x)*(2-x**2)+4*x*math.cos(x)
-                case "fourth":
-                    return (x**2-12)*math.sin(x)-8*math.cos(x)
-                case _:
-                    raise ValueError(f'Unknown param {deriviate}')
-        case "second":
-            match (deriviate):
-                case "bare":
-                    return math.exp(-x)*math.cos(x)
-                case "sec":
-                    return 2*math.exp(-x)*math.sin(x)
-                case "fourth":
-                    return -4*math.exp(-x)*math.cos(x)
-                case _:
-                    raise ValueError(f'Unknown param {deriviate}')
-        case "third":
-            match (deriviate):
-                case "bare":
-                    return 1/(1+x**2)
-                case "sec":
-                    return 8*(x**2)/(1+x**2)**3 - 2/(1+x**2)**2
-                case "fourth":
-                    return -288*(x**2)/(1+x**2)**4 + 24/(1+x**2)**3 + 384*(x**4)/(1+x**2)**5
-                case _:
-                    raise ValueError(f'Unknown param {deriviate}')
-        case _:
-            raise ValueError(f'Unknown func {func_number} ')
+def func(x, func_number, deriviate="bare"):
+    x = np.array(x)
+    if func_number == "first":
+        if deriviate == "bare":   return np.sin(x) + x**2
+        if deriviate == "sec":    return np.sin(x) * (2 - x**2) + 4 * x * np.cos(x)
+        if deriviate == "fourth": return (x**2 - 12) * np.sin(x) - 8 * np.cos(x)
+    elif func_number == "second":
+        if deriviate == "bare":   return np.exp(-x) * np.cos(x)
+        if deriviate == "sec":    return 2 * np.exp(-x) * np.sin(x)
+        if deriviate == "fourth": return -4 * np.exp(-x) * np.cos(x)
+    elif func_number == "third":
+        if deriviate == "bare":   return 1 / (1 + x**2)
+        if deriviate == "sec":    return 8*x**2 / (1+x**2)**3 - 2 / (1+x**2)**2
+        if deriviate == "fourth": return -288*x**2 / (1+x**2)**4 + 24 / (1+x**2)**3 + 384*x**4 / (1+x**2)**5
+    raise ValueError("Ошибка параметров")
 
+def analytical_integral(func_num, a, b):
+    if func_num == "first":
+        f = lambda x: -np.cos(x) + (x**3 / 3)
+    elif func_num == "second":
+        f = lambda x: (np.exp(-x) * (np.sin(x) - np.cos(x))) / 2
+    elif func_num == "third":
+        f = lambda x: np.arctan(x)
+    else: return 0
+    return f(b) - f(a)
 
-
-
-
-
-
-
-def trapez(a,b,n,  func_numb):
-    if (b <= a): raise ValueError("b должно быть больше a")
+def trapez(a, b, n, func_num):
     h = (b - a) / n
-    I = 0
-    error = abs(func(a,func_numb,"sec"))
-    for i in range(n-1):
-        I += func(a+i*h, func_numb, "bare") + func(a+h*(i+1), func_numb, "bare")
-        error = max(error,abs(func(a+h*(i+1),func_numb,"sec")))
-    I *= h/2
-    error *= (h**2)*(b-a)/12
-    return I,error
+    x = np.linspace(a, b, n + 1)
+    y = func(x, func_num, "bare")
+    I = h * (0.5 * (y[0] + y[-1]) + np.sum(y[1:-1]))
+    max_sec = np.max(np.abs(func(x, func_num, "sec")))
+    error = (h**2) * (b - a) * max_sec / 12
+    return I, error
 
-def simps(a,b,n, func_numb):
-    if (b <= a): raise ValueError("b должно быть больше a")
-    if (n % 2 != 0): raise ValueError("n должно быть чётным")
-
+def simps(a, b, n, func_num):
+    if n % 2 != 0: n += 1 
     h = (b - a) / n
-    I = func(a,func_numb, "bare") + func(b,func_numb, "bare")
-    error = max(abs(func(a,func_numb,"fourth")),abs(func(b,func_numb,"fourth")))  
+    x = np.linspace(a, b, n + 1)
+    y = func(x, func_num, "bare")
+    I = (h / 3) * (y[0] + y[-1] + 4 * np.sum(y[1:-1:2]) + 2 * np.sum(y[2:-2:2]))
+    max_fourth = np.max(np.abs(func(x, func_num, "fourth")))
+    error = (h**4) * (b - a) * max_fourth / 180
+    return I, error
+
+# Список n
+n_list = list(range(1, 11)) + list(range(15, 51, 5)) + list(range(60, 101, 10))
+
+tasks = [
+    ("first", -5, 5, "sin(x) + x^2"),
+    ("second", -4, -2, "exp(-x) * cos(x)"),
+    ("third", -4, 4, "1 / (1 + x^2)")
+]
+
+fig, axes = plt.subplots(3, 1, figsize=(10, 14))
+fig.tight_layout(pad=6.0)
+
+for i, (f_num, a, b, f_name) in enumerate(tasks):
+    exact = analytical_integral(f_num, a, b)
+    print(f"\n=== ФУНКЦИЯ: {f_name} на [{a}, {b}] ===")
+    print(f"АНАЛИТИЧЕСКОЕ ЗНАЧЕНИЕ: {exact:.10f}")
+    print(f"{'n':>4} | {'Trapez I':>12} | {'Tr. Err':>10} | {'Simps I':>12} | {'Sim. Err':>10}")
+    print("-" * 65)
     
+    for n_val in n_list:
+        i_tr, e_tr = trapez(a, b, n_val, f_num)
+        i_si, e_si = simps(a, b, n_val, f_num)
+        print(f"{n_val:4d} | {i_tr:12.6f} | {e_tr:10.1e} | {i_si:12.6f} | {e_si:10.1e}")
 
-    for i in range(1,n,2):
-        I += 4 * func(a + h*i,func_numb, "bare")
-        error = max(abs(func(a+h*i,func_numb,"fourth")), error)
+    x_plot = np.linspace(a, b, 300)
+    y_plot = func(x_plot, f_num, "bare")
+    axes[i].plot(x_plot, y_plot, label=f"f(x) = {f_name}", color='teal', lw=2)
+    axes[i].fill_between(x_plot, y_plot, color='teal', alpha=0.1)
+    axes[i].set_title(f"Интеграл: {f_name} (Точно: {exact:.4f})")
+    axes[i].grid(True, alpha=0.3)
+    axes[i].legend()
 
-    for i in range(2,n,2):
-        I += 2 * func(a + h*i,func_numb, "bare")
-        error = max(abs(func(a+h*i,func_numb,"fourth")), error)
-    
-    error *= (h**4)*(b-a)/180
-
-    return (h / 3 ) * I, error
-
-
-def compute(method,func_num,a,b,n_list:list):
-    outV  = np.empty((3,0), float)
-
-    for i in range(len(n_list)):
-        current_n = n_list[i]    
-        I , err =  method(a,b,current_n,func_num)
-        newOut = np.array([[current_n],[I], [err]])
-        outV = np.hstack((outV,newOut))
-    print(outV)
-
-
-
-a_1 = -5
-b_1 = 5
-
-a_2 = -4
-b_2 = -2
-
-a_3 = -4
-b_3 = 4
-
-n = list(range(50,1000,50))
-
-
-print("First func start: sin(x)*x^2 ")
-print("\t Trapez:")
-compute(trapez,"first",a_1,b_1,n)
-
-print("\tSimpson:")
-compute(simps,"first",a_1,b_1,n)
-
-
-print("Second func start: cos(x)*exp(-x) ")
-print("\t Trapez:")
-compute(trapez,"second",a_2,b_2,n)
-
-print("\tSimpson:")
-compute(simps,"third",a_2,b_2,n)
-
-
-
-print("Third func start: 1/(1 + x^2) ")
-print("\t Trapez:")
-compute(trapez,"third",a_3,b_3,n)
-
-print("\tSimpson:")
-compute(simps,"third",a_3,b_3,n)
-
-
-
-
-
-"""
-def func_1(x ):
-    return math.sin(x) + x**2
-
-def func_1_der2(x):
-    return math.sin(x)*(2-x**2)+4*x*math.cos(x)
-
-def func_1_der4(x):
-    return (x**2-12)*math.sin(x)-8*math.cos(x)
-
-
-
-def func_2(x):
-    return math.exp(-x)*math.cos(x)
-
-def func_2_der2(x):
-    return 2*math.exp(-x)*math.sin(x)
-
-def func_2_der4(x):
-    return -4*math.exp(-x)*math.cos(x)
-
-
-
-def func_3(x):
-    return 1/(1+x**2)
-
-def func_3_der2(x):
-    return 8*(x**2)/(1+x**2)**3 - 2/(1+x**2)**2
-
-def func_3_der4(x):
-    return -288*(x**2)/(1+x**2)**4 + 24/(1+x**2)**3 + 384*(x**4)/(1+x**2)**5
-
-"""
+plt.show()
