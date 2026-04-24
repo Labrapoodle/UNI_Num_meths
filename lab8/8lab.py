@@ -45,24 +45,37 @@ def load_data_2(filename):
 
 # графики
 def plot_results(x, y, title):
+    # Находим коэффициенты
     c1 = least_squares(x, y, 1)
     c2 = least_squares(x, y, 2)
     
     plt.scatter(x, y, color='lightgray', s=15, label='Данные', zorder=1)
     x_range = np.linspace(min(x), max(x), 100)
     
+    # Расчет для m = 1
     if c1 is not None:
-        y1 = c1[0] + c1[1] * x_range
-        plt.plot(x_range, y1, label=f'm=1: y={c1[0]:.2f}+{c1[1]:.2f}x', color='blue', zorder=2)
+        # Предсказанные значения y для исходных x
+        y_pred1 = c1[0] + c1[1] * x
+        sse1 = np.sum((y - y_pred1)**2)
         
+        y_plot1 = c1[0] + c1[1] * x_range
+        label_1 = f'm=1: y={c1[0]:.2f}+{c1[1]:.2f}x\nОтклонение: {sse1:.2f}'
+        plt.plot(x_range, y_plot1, label=label_1, color='blue', linewidth=2, zorder=2)
+        
+    # Расчет для m = 2
     if c2 is not None:
-        y2 = c2[0] + c2[1] * x_range + c2[2] * (x_range**2)
+        # Предсказанные значения y для исходных x
+        y_pred2 = c2[0] + c2[1] * x + c2[2] * (x**2)
+        sse2 = np.sum((y - y_pred2)**2)
         
-        plt.plot(x_range, y2, '--', label=f'm=2: y={c2[0]:.2f}+{c2[1]:.2f}x+{c2[2]:.4f}x²', 
-                 color='red', linewidth=2, zorder=3)
+        y_plot2 = c2[0] + c2[1] * x_range + c2[2] * (x_range**2)
+        # Для c2 используем 4 знака или экспоненциальную запись, если он мал
+        c2_val = f"{c2[2]:.4f}" if abs(c2[2]) > 0.0001 else f"{c2[2]:.2e}"
+        label_2 = f'm=2: y={c2[0]:.2f}+{c2[1]:.2f}x+{c2_val}x²\nОтклонение: {sse2:.2f}'
+        plt.plot(x_range, y_plot2, '--', label=label_2, color='red', linewidth=2, zorder=3)
         
     plt.title(title)
-    plt.legend(fontsize='x-small')
+    plt.legend(fontsize='x-small', loc='upper left')
     plt.grid(True, alpha=0.2)
 
 
