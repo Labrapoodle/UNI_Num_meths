@@ -46,12 +46,12 @@ def solve_system(A, b, epsilon=0.001, max_iter=100):
 
     print("="*40)
     if sol_seidel is not None:
-        print("РЕШЕНИЕ СИСТЕМЫ (Метод Зейделя):")
+        print("(Метод Зейделя):")
         for i, val in enumerate(sol_seidel):
             print(f"x[{i}] = {val:.6f}")
     
     print("-" * 40)
-    print(f"ИТОГ СРАВНЕНИЯ (epsilon={epsilon}):")
+    print(f"Итог (epsilon={epsilon}):")
     print(f"Количество итераций метода простых итераций = {iter_simple}")
     print(f"Количество итераций метода Зейделя           = {iter_seidel}")
     print("="*40)
